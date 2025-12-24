@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+target/
+.mvn/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Blockchain
+blockchain/cache/
+blockchain/artifacts/
+blockchain/coverage/
+
+# Spring Boot
+backend/.mvn/
+backend/target/
+
+# Frontend
+frontend/dist/
+frontend/.vite/

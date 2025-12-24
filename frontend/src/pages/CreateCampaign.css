@@ -1,0 +1,56 @@
+.create-campaign {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.create-campaign h1 {
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.campaign-form {
+  margin-bottom: 30px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.info-box {
+  background: #e7f3ff;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+}
+
+.info-box h3 {
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.info-box ul {
+  margin-left: 20px;
+  color: #555;
+}
+
+.info-box li {
+  margin-bottom: 8px;
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

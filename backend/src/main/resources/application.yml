@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: blockchain-crowdfunding-backend
+  
+  datasource:
+    url: jdbc:mysql://localhost:3306/crowdfunding_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+    username: root
+    password: Somu@512006
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+        format_sql: true
+  
+  security:
+    jwt:
+      secret: ${JWT_SECRET:your-256-bit-secret-key-change-this-in-production-minimum-32-characters}
+      expiration: 86400000 # 24 hours
+
+# Blockchain Configuration
+blockchain:
+  network-url: ${BLOCKCHAIN_RPC_URL:https://eth-sepolia.g.alchemy.com/v2/6K-FGu7bmItzz-jQjt5ff}
+  contract-address: ${CROWDFUNDING_CONTRACT_ADDRESS:0x04C48F057C1a3f983F8D357D680D80f3Dfb4D4D6}
+  chain-id: 11155111
+
+# Server Configuration
+server:
+  port: 8080
+  cors:
+    allowed-origins: http://localhost:3000
+    allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+    allowed-headers: "*"
+    allow-credentials: true
+
+# Logging
+logging:
+  level:
+    com.crowdfunding: DEBUG
+    org.springframework.web: INFO
+    org.hibernate: INFO
