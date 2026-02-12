@@ -25,7 +25,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     
     @Transactional
-    public User signup(String username, String email, String password, String fullName) {
+    public User signup(String username, String email, String password, String fullName,
+                       String phoneNumber, String country) {
         if (userRepository.existsByUsername(username)) {
             throw new RuntimeException("Username already exists");
         }
@@ -38,6 +39,8 @@ public class UserService {
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         user.setFullName(fullName);
+        user.setPhoneNumber(phoneNumber);
+        user.setCountry(country);
         
         // Assign default role
         Role userRole = roleRepository.findByName(Role.RoleName.ROLE_USER)

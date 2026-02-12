@@ -8,7 +8,9 @@ const Signup = () => {
     username: '',
     email: '',
     password: '',
-    fullName: ''
+    fullName: '',
+    phoneNumber: '',
+    country: ''
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -51,6 +53,24 @@ const Signup = () => {
               type="text"
               name="fullName"
               value={formData.fullName}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="form-group">
+            <label>Phone Number</label>
+            <input
+              type="text"
+              name="phoneNumber"
+              value={formData.phoneNumber}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="form-group">
+            <label>Country</label>
+            <input
+              type="text"
+              name="country"
+              value={formData.country}
               onChange={handleChange}
             />
           </div>

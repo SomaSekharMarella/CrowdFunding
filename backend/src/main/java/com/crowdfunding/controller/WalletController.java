@@ -1,5 +1,6 @@
 package com.crowdfunding.controller;
 
+import com.crowdfunding.dto.WalletResponse;
 import com.crowdfunding.dto.WalletConnectRequest;
 import com.crowdfunding.entity.User;
 import com.crowdfunding.entity.Wallet;
@@ -117,8 +118,12 @@ public class WalletController {
             if (wallet == null) {
                 return ResponseEntity.ok().body("No wallet connected");
             }
-            
-            return ResponseEntity.ok().body(wallet);
+
+            return ResponseEntity.ok(new WalletResponse(
+                wallet.getAddress(),
+                wallet.getConnectedAt(),
+                wallet.getIsVerified()
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error fetching wallet: " + e.getMessage());
         }

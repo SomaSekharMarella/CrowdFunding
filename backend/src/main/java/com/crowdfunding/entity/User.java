@@ -1,5 +1,6 @@
 package com.crowdfunding.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -28,10 +29,17 @@ public class User {
     private String username;
     
     @Column(nullable = false)
+    @JsonIgnore
     private String password; // Encrypted
     
     @Column(unique = true, nullable = false)
     private String email;
+    
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+    
+    @Column(name = "country", length = 100)
+    private String country;
     
     @Column(name = "full_name")
     private String fullName;
@@ -51,6 +59,7 @@ public class User {
     private Set<Role> roles = new HashSet<>();
     
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    @JsonIgnore
     private Wallet wallet;
     
     @PrePersist

@@ -3,7 +3,7 @@ spring:
     name: blockchain-crowdfunding-backend
   
   datasource:
-    url: jdbc:mysql://localhost:3306/crowdfunding_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://localhost:3306/crowdfunding_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
     password: Somu@512006
     driver-class-name: com.mysql.cj.jdbc.Driver
