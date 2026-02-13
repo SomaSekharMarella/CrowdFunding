@@ -3,10 +3,11 @@
 }
 
 .campaign-details {
-  background: white;
-  border-radius: 8px;
-  padding: 30px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: var(--color-card-bg);
+  border-radius: var(--radius-lg);
+  padding: 30px 28px;
+  box-shadow: 0 16px 35px rgba(37, 99, 235, 0.08);
+  border: 1px solid var(--color-border);
 }
 
 .campaign-header {
@@ -17,22 +18,22 @@
   width: 100%;
   max-height: 400px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
   margin-bottom: 20px;
 }
 
 .campaign-info h1 {
-  color: #333;
+  color: var(--color-text-dark);
   margin-bottom: 10px;
 }
 
 .campaign-meta {
-  color: #666;
+  color: var(--color-text-light);
   margin-bottom: 15px;
 }
 
 .campaign-description {
-  color: #555;
+  color: var(--color-text-dark);
   line-height: 1.8;
   font-size: 16px;
 }
@@ -45,7 +46,7 @@
 }
 
 .stat-box {
-  background: #f8f9fa;
+  background: var(--color-section-alt);
   padding: 20px;
   border-radius: 8px;
   text-align: center;
@@ -53,14 +54,14 @@
 
 .stat-box h3 {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-light);
   margin-bottom: 10px;
 }
 
 .stat-box .stat-value {
   font-size: 24px;
   font-weight: bold;
-  color: #007bff;
+  color: var(--color-primary);
 }
 
 .progress-section {
@@ -70,28 +71,29 @@
 .progress-bar-large {
   width: 100%;
   height: 20px;
-  background-color: #e9ecef;
+  background-color: var(--color-progress-track);
   border-radius: 10px;
   overflow: hidden;
 }
 
 .progress-fill-large {
   height: 100%;
-  background-color: #28a745;
+  background-color: var(--color-primary);
   transition: width 0.3s;
 }
 
 .campaign-actions {
   margin-bottom: 40px;
   padding: 20px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  background: var(--color-card-bg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
 }
 
 .donation-section h3,
 .owner-actions h3 {
   margin-bottom: 15px;
-  color: #333;
+  color: var(--color-text-dark);
 }
 
 .donation-input {
@@ -103,13 +105,13 @@
 .donation-input input {
   flex: 1;
   padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
   font-size: 16px;
 }
 
 .info-text {
-  color: #666;
+  color: var(--color-text-light);
   font-style: italic;
 }
 
@@ -119,7 +121,7 @@
 
 .donations-section h2 {
   margin-bottom: 20px;
-  color: #333;
+  color: var(--color-text-dark);
 }
 
 .donations-list {
@@ -133,18 +135,18 @@
   justify-content: space-between;
   align-items: center;
   padding: 15px;
-  background: #f8f9fa;
-  border-radius: 5px;
+  background: var(--color-section-alt);
+  border-radius: 8px;
 }
 
 .donation-amount {
   font-size: 18px;
   font-weight: bold;
-  color: #28a745;
+  color: var(--color-primary);
   margin-bottom: 5px;
 }
 
 .donation-meta {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-light);
 }

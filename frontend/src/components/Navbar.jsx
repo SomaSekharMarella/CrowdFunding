@@ -16,26 +16,28 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="container">
         <div className="navbar-content">
-          <Link to="/dashboard" className="navbar-brand">
+          <Link to="/dashboard" className="navbar-brand navbar-title">
             Crowdfunding Platform
           </Link>
           
           {user && (
             <div className="navbar-menu">
-              <Link to="/dashboard">Dashboard</Link>
-              <Link to="/campaigns">Campaigns</Link>
-              <Link to="/create-campaign">Create Campaign</Link>
-              <Link to="/my-campaigns">My Campaigns</Link>
-              <Link to="/my-donations">My Donations</Link>
-              {user.roles?.includes('ROLE_ADMIN') && (
-                <>
-                  <Link to="/admin">Admin</Link>
-                  <Link to="/admin/users">Users</Link>
-                  <Link to="/admin/campaigns">Campaigns</Link>
-                </>
-              )}
+              <div className="nav-links">
+                <Link to="/dashboard">Dashboard</Link>
+                <Link to="/campaigns">Campaigns</Link>
+                <Link to="/create-campaign">Create Campaign</Link>
+                <Link to="/my-campaigns">My Campaigns</Link>
+                <Link to="/my-donations">My Donations</Link>
+                {user.roles?.includes('ROLE_ADMIN') && (
+                  <>
+                    <Link to="/admin">Admin</Link>
+                    <Link to="/admin/users">Users</Link>
+                    <Link to="/admin/campaigns">Campaigns</Link>
+                  </>
+                )}
+              </div>
               <span className="navbar-user">{user.username}</span>
-              <button onClick={handleLogout} className="btn btn-secondary">
+              <button onClick={handleLogout} className="btn btn-secondary logout-btn">
                 Logout
               </button>
             </div>

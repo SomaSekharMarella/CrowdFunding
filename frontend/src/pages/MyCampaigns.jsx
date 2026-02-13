@@ -29,9 +29,9 @@ const MyCampaigns = () => {
 
   return (
     <div className="container">
-      <div className="my-campaigns-header">
-        <h1>My Campaigns</h1>
-        <Link to="/create-campaign" className="btn btn-primary">
+      <div className="page-header my-campaigns-header">
+        <h1 className="page-title">My Campaigns</h1>
+        <Link to="/create-campaign" className="btn btn-primary primary-btn">
           Create New Campaign
         </Link>
       </div>
@@ -39,9 +39,9 @@ const MyCampaigns = () => {
       {error && <div className="alert alert-error">{error}</div>}
 
       {campaigns.length === 0 ? (
-        <div className="empty-state">
-          <p>You haven't created any campaigns yet.</p>
-          <Link to="/create-campaign" className="btn btn-primary">
+        <div className="empty-card">
+          <p className="empty-text">You haven't created any campaigns yet.</p>
+          <Link to="/create-campaign" className="btn btn-primary primary-btn">
             Create Your First Campaign
           </Link>
         </div>

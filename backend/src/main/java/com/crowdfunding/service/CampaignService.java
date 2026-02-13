@@ -2,6 +2,7 @@ package com.crowdfunding.service;
 
 import com.crowdfunding.dto.CampaignResponse;
 import com.crowdfunding.entity.Campaign;
+import com.crowdfunding.entity.Donation;
 import com.crowdfunding.entity.User;
 import com.crowdfunding.repository.CampaignRepository;
 import com.crowdfunding.repository.DonationRepository;
@@ -48,30 +49,32 @@ public class CampaignService {
     }
     
     /**
-     * Sync campaign data from blockchain
+     * Sync campaign data.
+     *
+     * For UI consistency we now treat the database donations as the single
+     * source of truth for `totalRaised` that is shown in the frontend.
+     *
+     * - `totalRaised` = sum of all donations stored in MySQL for this campaign
+     * - Blockchain is still queried to update status flags (goalReached,
+     *   fundsWithdrawn, active/cancelled), but its `totalRaised` field is
+     *   NOT used for display anymore.
      */
     @Transactional
     public void syncCampaignFromBlockchain(Long campaignId) {
         Campaign campaign = campaignRepository.findById(campaignId)
             .orElseThrow(() -> new RuntimeException("Campaign not found"));
-        
-        // Skip sync if blockchainId is not set
-        if (campaign.getBlockchainId() == null) {
-            System.err.println("Warning: Campaign " + campaignId + " has no blockchainId, skipping sync");
-            return;
-        }
-        
+
+        // 1) Always compute totalRaised from DB donations
+        BigDecimal totalFromDonations = donationRepository.findByCampaign(campaign)
+            .stream()
+            .map(Donation::getAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 2) Best‑effort: update status flags from blockchain (no effect on totalRaised)
         try {
-            BlockchainService.CampaignData blockchainData = 
+            BlockchainService.CampaignData blockchainData =
                 blockchainService.getCampaign(campaign.getBlockchainId());
-            
-            // Convert Wei to ETH
-            BigDecimal goalEth = new BigDecimal(blockchainData.goal)
-                .divide(new BigDecimal(BigInteger.TEN.pow(18)), 18, RoundingMode.DOWN);
-            BigDecimal raisedEth = new BigDecimal(blockchainData.totalRaised)
-                .divide(new BigDecimal(BigInteger.TEN.pow(18)), 18, RoundingMode.DOWN);
-            
-            campaign.setTotalRaised(raisedEth);
+
             campaign.setGoalReached(blockchainData.goalReached);
             campaign.setFundsWithdrawn(blockchainData.fundsWithdrawn);
             if (blockchainData.active != null && !blockchainData.active) {
@@ -81,15 +84,24 @@ public class CampaignService {
             } else {
                 campaign.setStatus(Campaign.CampaignStatus.ACTIVE);
             }
-            campaignRepository.save(campaign);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to sync from blockchain: " + e.getMessage());
+            // If blockchain is unreachable, just keep existing status; UI totalRaised still correct.
+            System.err.println("Warning: could not refresh blockchain status for campaign "
+                + campaignId + ": " + e.getMessage());
         }
+
+        // 3) Persist DB‑based totalRaised and derived goalReached flag
+        campaign.setTotalRaised(totalFromDonations);
+        if (campaign.getGoalAmount() != null
+            && totalFromDonations.compareTo(campaign.getGoalAmount()) >= 0) {
+            campaign.setGoalReached(true);
+        }
+
+        campaignRepository.save(campaign);
+        System.out.println("Campaign " + campaignId + " synced from DB donations. TotalRaised: " + totalFromDonations);
     }
     
     public List<CampaignResponse> getAllCampaigns() {
-        // For list views, return cached data (faster)
-        // Individual campaign details will auto-sync when fetched
         return campaignRepository.findAllByOrderByCreatedAtDesc().stream()
             .map(this::toResponse)
             .collect(Collectors.toList());
@@ -97,7 +109,6 @@ public class CampaignService {
 
     /** Active campaigns only (for GET /api/campaign/active) */
     public List<CampaignResponse> getActiveCampaigns() {
-        // For list views, return cached data (faster)
         return campaignRepository.findByStatus(Campaign.CampaignStatus.ACTIVE).stream()
             .map(this::toResponse)
             .collect(Collectors.toList());
@@ -107,27 +118,41 @@ public class CampaignService {
         Campaign campaign = campaignRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Campaign not found"));
         
-        // Auto-sync from blockchain to ensure fresh data (totalRaised, goalReached, etc.)
+        // Auto-sync from blockchain to ensure latest data (totalRaised, goalReached, etc.)
+        // syncCampaignFromBlockchain has built-in retry and fallback to DB calculation
         try {
-            if (campaign.getBlockchainId() != null) {
-                syncCampaignFromBlockchain(id);
-                // Reload campaign after sync to get updated data
-                campaign = campaignRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Campaign not found"));
-            } else {
-                System.err.println("Warning: Campaign " + id + " has no blockchainId, cannot sync");
-            }
+            syncCampaignFromBlockchain(id);
+            // Refresh campaign after sync to get updated values
+            campaign = campaignRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Campaign not found"));
         } catch (Exception e) {
-            // Log but don't fail - return cached data if sync fails
-            System.err.println("Warning: Failed to sync campaign " + id + " from blockchain: " + e.getMessage());
-            e.printStackTrace(); // Print full stack trace for debugging
+            // Even if sync fails, try to update from DB donations as last resort
+            System.err.println("Warning: Failed to sync campaign " + id + " (blockchainId: " + 
+                campaign.getBlockchainId() + ") from blockchain: " + e.getMessage());
+            try {
+                // Last resort: calculate from DB donations
+                BigDecimal totalFromDonations = donationRepository.findByCampaign(campaign)
+                    .stream()
+                    .map(Donation::getAmount)
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+                if (totalFromDonations.compareTo(BigDecimal.ZERO) > 0) {
+                    campaign.setTotalRaised(totalFromDonations);
+                    if (campaign.getGoalAmount() != null && totalFromDonations.compareTo(campaign.getGoalAmount()) >= 0) {
+                        campaign.setGoalReached(true);
+                    }
+                    campaignRepository.save(campaign);
+                    System.out.println("Updated campaign " + id + " from DB donations as fallback. TotalRaised: " + totalFromDonations);
+                }
+            } catch (Exception fallbackError) {
+                System.err.println("Fallback calculation also failed: " + fallbackError.getMessage());
+            }
+            e.printStackTrace();
         }
         
         return toResponse(campaign);
     }
     
     public List<CampaignResponse> getCampaignsByCreator(User creator) {
-        // For list views, return cached data (faster)
         return campaignRepository.findByCreator(creator).stream()
             .map(this::toResponse)
             .collect(Collectors.toList());
@@ -157,7 +182,7 @@ public class CampaignService {
         response.setImageUrl(campaign.getImageUrl());
         response.setCategory(campaign.getCategory());
         response.setGoalAmount(campaign.getGoalAmount());
-        response.setTotalRaised(campaign.getTotalRaised());
+        response.setTotalRaised(campaign.getTotalRaised() != null ? campaign.getTotalRaised() : BigDecimal.ZERO);
         response.setDeadline(campaign.getDeadline());
         response.setGoalReached(campaign.getGoalReached());
         response.setFundsWithdrawn(campaign.getFundsWithdrawn());

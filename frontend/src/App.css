@@ -1,3 +1,50 @@
-.App {
+.App,
+.app-layout {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.App > .navbar + .main-content {
+  animation: fadeInUp 220ms ease-out;
+}
+
+.main-content {
+  flex: 1;
+  padding-bottom: 60px;
+}
+
+.app-footer {
+  background-color: var(--color-header-bg);
+  color: var(--color-text-light);
+  padding: 18px 40px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.app-footer-inner,
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+}
+
+.app-footer-title {
+  font-weight: 600;
+}
+
+.app-footer-meta {
+  opacity: 0.8;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

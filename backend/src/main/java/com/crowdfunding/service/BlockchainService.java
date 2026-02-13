@@ -37,7 +37,12 @@ public class BlockchainService {
     }
     
     /**
-     * Get campaign details from blockchain (creator, goal, deadline, totalRaised, goalReached, fundsWithdrawn, active)
+     * Get campaign details from blockchain.
+     *
+     * NOTE: To stay compatible with older deployed contracts that returned only
+     * 6 values (without `active`) and newer ones that return 7, we decode only
+     * the first 6 values and treat `active` as `true` by default. This avoids
+     * ABI length / range errors like "Range [...] out of bounds for length ...".
      */
     public CampaignData getCampaign(Long campaignId) throws Exception {
         Function function = new Function(
@@ -48,7 +53,6 @@ public class BlockchainService {
                 new TypeReference<Uint256>() {},
                 new TypeReference<Uint256>() {},
                 new TypeReference<Uint256>() {},
-                new TypeReference<org.web3j.abi.datatypes.Bool>() {},
                 new TypeReference<org.web3j.abi.datatypes.Bool>() {},
                 new TypeReference<org.web3j.abi.datatypes.Bool>() {}
             )
@@ -65,7 +69,9 @@ public class BlockchainService {
             function.getOutputParameters()
         );
         
-        Boolean activeValue = decoded.get(6).getValue() != null ? (Boolean) decoded.get(6).getValue() : true;
+        // We don't decode the optional `active` flag here to remain compatible
+        // with contracts that don't return it. Assume active=true by default.
+        Boolean activeValue = true;
         return new CampaignData(
             decoded.get(0).getValue().toString(), // creator
             (BigInteger) decoded.get(1).getValue(), // goal

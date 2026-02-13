@@ -41,9 +41,7 @@ public class AuthController {
                 request.getUsername(),
                 request.getEmail(),
                 request.getPassword(),
-                request.getFullName(),
-                request.getPhoneNumber(),
-                request.getCountry()
+                request.getFullName()
             );
             
             return ResponseEntity.ok().body("User registered successfully");

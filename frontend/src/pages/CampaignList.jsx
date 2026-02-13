@@ -29,9 +29,9 @@ const CampaignList = () => {
 
   return (
     <div className="container">
-      <div className="campaign-list-header">
-        <h1>All Campaigns</h1>
-        <Link to="/create-campaign" className="btn btn-primary">
+      <div className="page-header campaign-list-header">
+        <h1 className="page-title">All Campaigns</h1>
+        <Link to="/create-campaign" className="btn btn-primary primary-btn">
           Create Campaign
         </Link>
       </div>
@@ -39,14 +39,14 @@ const CampaignList = () => {
       {error && <div className="alert alert-error">{error}</div>}
 
       {campaigns.length === 0 ? (
-        <div className="empty-state">
-          <p>No campaigns found. Be the first to create one!</p>
-          <Link to="/create-campaign" className="btn btn-primary">
+        <div className="empty-card">
+          <p className="empty-text">No campaigns found. Be the first to create one!</p>
+          <Link to="/create-campaign" className="btn btn-primary primary-btn">
             Create Campaign
           </Link>
         </div>
       ) : (
-        <div className="campaign-list">
+        <div className="campaign-grid">
           {campaigns.map(campaign => (
             <div key={campaign.id} className="campaign-item">
               {campaign.imageUrl && (

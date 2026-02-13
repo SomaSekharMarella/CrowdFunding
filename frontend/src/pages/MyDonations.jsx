@@ -29,13 +29,13 @@ const MyDonations = () => {
 
   return (
     <div className="container">
-      <h1>My Donations</h1>
+      <h1 className="page-title">My Donations</h1>
       {error && <div className="alert alert-error">{error}</div>}
 
       {donations.length === 0 ? (
-        <div className="empty-state">
-          <p>You haven't made any donations yet.</p>
-          <Link to="/campaigns" className="btn btn-primary">
+        <div className="empty-card">
+          <p className="empty-text">You haven't made any donations yet.</p>
+          <Link to="/campaigns" className="btn btn-primary primary-btn">
             Browse Campaigns
           </Link>
         </div>

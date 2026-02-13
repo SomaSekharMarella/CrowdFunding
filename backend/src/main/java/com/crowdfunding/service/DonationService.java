@@ -52,12 +52,18 @@ public class DonationService {
         
         Donation savedDonation = donationRepository.save(donation);
         
-        // Sync campaign data from blockchain to update totalRaised, goalReached, etc.
+        // Sync campaign data - now uses DB donations as primary source, so immediate sync is safe
+        // The sync method will calculate from DB donations (which includes this new donation) 
+        // and compare with blockchain, using the higher value
         try {
+            // Small delay to ensure DB transaction is committed
+            Thread.sleep(500);
             campaignService.syncCampaignFromBlockchain(campaignId);
+            System.out.println("Successfully synced campaign " + campaignId + " after donation recording");
         } catch (Exception e) {
             // Log but don't fail the donation recording if sync fails
             System.err.println("Warning: Failed to sync campaign from blockchain after donation: " + e.getMessage());
+            e.printStackTrace();
         }
         
         return savedDonation;

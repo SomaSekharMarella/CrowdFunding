@@ -21,8 +21,9 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="App">
+        <div className="App app-layout">
           <Navbar />
+          <main className="main-content">
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
@@ -106,6 +107,18 @@ function App() {
               }
             />
           </Routes>
+          </main>
+          <footer className="app-footer footer">
+            <div className="container app-footer-inner footer-content">
+              <div>
+                <div className="app-footer-title">Crowdfunding Platform</div>
+                <div className="app-footer-meta">Hybrid blockchain + Spring Boot crowdfunding dashboard</div>
+              </div>
+              <div className="app-footer-meta">
+                Built with Ethereum · Spring Boot · React
+              </div>
+            </div>
+          </footer>
         </div>
       </Router>
     </AuthProvider>

@@ -6,10 +6,11 @@
 }
 
 .donation-card {
-  background: white;
+  background: var(--color-card-bg);
   padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 16px 35px rgba(37, 99, 235, 0.08);
+  border: 1px solid var(--color-border);
 }
 
 .donation-header {
@@ -24,7 +25,7 @@
 }
 
 .donation-header h3 a {
-  color: #007bff;
+  color: var(--blue-700);
   text-decoration: none;
 }
 
@@ -35,7 +36,7 @@
 .donation-amount {
   font-size: 20px;
   font-weight: bold;
-  color: #28a745;
+  color: var(--color-primary);
 }
 
 .donation-details {
@@ -45,6 +46,6 @@
 }
 
 .donation-date {
-  color: #666;
+  color: var(--color-text-light);
   font-size: 14px;
 }

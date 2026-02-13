@@ -8,7 +8,7 @@ import './Dashboard.css';
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [campaigns, setCampaigns] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);        // all campaigns
   const [walletConnected, setWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const [loading, setLoading] = useState(true);
@@ -25,7 +25,8 @@ const Dashboard = () => {
         walletAPI.getMyWallet().catch(() => null)
       ]);
 
-      setCampaigns(campaignsRes.data?.slice(0, 6) ?? []);
+      // Store full list for accurate stats; slice only when rendering "recent"
+      setCampaigns(Array.isArray(campaignsRes.data) ? campaignsRes.data : []);
 
       const walletData = walletRes?.data;
       if (walletData && typeof walletData === 'object' && walletData.address) {
@@ -66,14 +67,9 @@ const Dashboard = () => {
         return;
       }
 
-      console.log('Token exists:', !!token, 'Token length:', token?.length);
-      console.log('User:', user);
-
       // Test authentication first
       try {
         const authTest = await api.get('/wallet/test-auth');
-        console.log('Auth test before wallet connect:', authTest.data);
-        console.log('Auth test details:', JSON.stringify(authTest.data, null, 2));
         
         // Check if authentication is valid
         if (!authTest.data.authenticated) {
@@ -89,14 +85,7 @@ const Dashboard = () => {
           return;
         }
         
-        console.log('Authentication validated successfully');
       } catch (authErr) {
-        console.error('Auth test failed:', authErr);
-        console.error('Auth test error details:', {
-          status: authErr.response?.status,
-          data: authErr.response?.data,
-          message: authErr.message
-        });
         alert('Authentication check failed. Please login again.');
         window.location.href = '/login';
         return;
@@ -104,35 +93,16 @@ const Dashboard = () => {
 
       // Connect MetaMask first
       const address = await web3Service.connectWallet();
-      console.log('MetaMask connected, address:', address);
 
       // Then save to backend
       try {
-        console.log('Sending wallet connect request with address:', address);
-        console.log('Request payload:', { address });
-        
         const response = await walletAPI.connect(address);
-        console.log('Wallet connect response:', response);
-        console.log('Wallet connect success!');
         setWalletAddress(address);
         setWalletConnected(true);
         alert('Wallet connected successfully!');
         // Reload to update wallet status
         loadData();
       } catch (apiError) {
-        console.error('Backend API error:', apiError);
-        console.error('Full error object:', apiError);
-        console.error('Error response:', apiError.response);
-        console.error('Error details:', {
-          status: apiError.response?.status,
-          statusText: apiError.response?.statusText,
-          data: apiError.response?.data,
-          headers: apiError.response?.headers,
-          requestHeaders: apiError.config?.headers,
-          url: apiError.config?.url,
-          method: apiError.config?.method
-        });
-        
         // Try to get the actual error message
         let errorMessage = 'Access denied';
         if (typeof apiError.response?.data === 'string') {
@@ -166,6 +136,15 @@ const Dashboard = () => {
     return <div className="container">Loading...</div>;
   }
 
+  const now = new Date();
+
+  const totalCampaigns = campaigns.length;
+  const activeCampaigns = campaigns.filter(c =>
+    c.status === 'ACTIVE' &&
+    !c.fundsWithdrawn &&
+    new Date(c.deadline) > now
+  ).length;
+
   return (
     <div className="container">
       <div className="dashboard-header">
@@ -195,12 +174,12 @@ const Dashboard = () => {
       <div className="dashboard-stats">
         <div className="stat-card">
           <h3>Total Campaigns</h3>
-          <p className="stat-number">{campaigns.length}</p>
+          <p className="stat-number">{totalCampaigns}</p>
         </div>
         <div className="stat-card">
           <h3>Active Campaigns</h3>
           <p className="stat-number">
-            {campaigns.filter(c => !c.goalReached && new Date(c.deadline) > new Date()).length}
+            {activeCampaigns}
           </p>
         </div>
       </div>
@@ -220,7 +199,7 @@ const Dashboard = () => {
           <p>No campaigns yet. Be the first to create one!</p>
         ) : (
           <div className="campaign-grid">
-            {campaigns.map(campaign => (
+            {campaigns.slice(0, 6).map(campaign => (
               <Link key={campaign.id} to={`/campaigns/${campaign.id}`} className="campaign-card">
                 <h3>{campaign.title}</h3>
                 <p className="campaign-description">{campaign.description?.substring(0, 100)}...</p>
