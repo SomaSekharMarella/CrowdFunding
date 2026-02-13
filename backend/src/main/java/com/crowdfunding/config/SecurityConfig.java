@@ -21,9 +21,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.util.Arrays;
@@ -43,9 +40,10 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Allow OPTIONS requests (CORS preflight)
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
@@ -55,24 +53,14 @@ public class SecurityConfig {
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .exceptionHandling(exceptions -> exceptions
                 .authenticationEntryPoint((request, response, authException) -> {
-                    System.out.println("=== AUTHENTICATION ENTRY POINT ===");
-                    System.out.println("Request URI: " + request.getRequestURI());
-                    System.out.println("Request Method: " + request.getMethod());
-                    System.out.println("Auth Exception: " + authException.getMessage());
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json");
-                    response.getWriter().write("{\"error\":\"Unauthorized: " + authException.getMessage() + "\"}");
+                    response.getWriter().write("{\"error\":\"Unauthorized\"}");
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
-                    System.out.println("=== ACCESS DENIED HANDLER ===");
-                    System.out.println("Request URI: " + request.getRequestURI());
-                    System.out.println("Request Method: " + request.getMethod());
-                    System.out.println("Access Denied Exception: " + accessDeniedException.getMessage());
-                    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-                    System.out.println("Current Authentication: " + (auth != null ? auth.getClass().getName() : "NULL"));
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType("application/json");
-                    response.getWriter().write("{\"error\":\"Access Denied: " + accessDeniedException.getMessage() + "\"}");
+                    response.getWriter().write("{\"error\":\"Access Denied\"}");
                 })
             );
         

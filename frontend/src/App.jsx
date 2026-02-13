@@ -11,6 +11,10 @@ import CampaignDetails from './pages/CampaignDetails';
 import CreateCampaign from './pages/CreateCampaign';
 import MyDonations from './pages/MyDonations';
 import MyCampaigns from './pages/MyCampaigns';
+import AdminDashboard from './pages/AdminDashboard';
+import AdminUsers from './pages/AdminUsers';
+import AdminCampaigns from './pages/AdminCampaigns';
+import AdminRoute from './components/AdminRoute';
 import './App.css';
 
 function App() {
@@ -68,6 +72,36 @@ function App() {
               element={
                 <PrivateRoute>
                   <MyCampaigns />
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <PrivateRoute>
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/users"
+              element={
+                <PrivateRoute>
+                  <AdminRoute>
+                    <AdminUsers />
+                  </AdminRoute>
+                </PrivateRoute>
+              }
+            />
+            <Route
+              path="/admin/campaigns"
+              element={
+                <PrivateRoute>
+                  <AdminRoute>
+                    <AdminCampaigns />
+                  </AdminRoute>
                 </PrivateRoute>
               }
             />

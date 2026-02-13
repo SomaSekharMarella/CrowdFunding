@@ -25,14 +25,15 @@ const Dashboard = () => {
         walletAPI.getMyWallet().catch(() => null)
       ]);
 
-      setCampaigns(campaignsRes.data.slice(0, 6)); // Show latest 6
-      
-      if (walletRes?.data?.address) {
-        setWalletAddress(walletRes.data.address);
+      setCampaigns(campaignsRes.data?.slice(0, 6) ?? []);
+
+      const walletData = walletRes?.data;
+      if (walletData && typeof walletData === 'object' && walletData.address) {
+        setWalletAddress(walletData.address);
         setWalletConnected(true);
       }
     } catch (err) {
-      setError('Failed to load data');
+      setError(err.response?.data?.message || 'Failed to load data');
     } finally {
       setLoading(false);
     }
@@ -228,7 +229,9 @@ const Dashboard = () => {
                     <div
                       className="progress-fill"
                       style={{
-                        width: `${Math.min((campaign.totalRaised / campaign.goalAmount) * 100, 100)}%`
+                        width: `${campaign.goalAmount && Number(campaign.goalAmount) > 0
+                          ? Math.min((Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100, 100)
+                          : 0}%`
                       }}
                     />
                   </div>

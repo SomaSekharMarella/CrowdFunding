@@ -36,7 +36,9 @@ public class DonationController {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
             User donor = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-            
+            if (donor.getRoles().stream().anyMatch(r -> r.getName().name().equals("ROLE_ADMIN"))) {
+                return ResponseEntity.status(403).body("Admin cannot donate");
+            }
             Donation donation = donationService.recordDonation(
                 campaignId,
                 donor,

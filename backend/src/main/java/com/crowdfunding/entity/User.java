@@ -1,6 +1,5 @@
 package com.crowdfunding.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -11,8 +10,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * User Entity - Stores authentication and profile data
- * Wallet address stored separately in Wallet entity
+ * User Entity - Authentication, profile, role and status (ACTIVE/BLOCKED)
  */
 @Entity
 @Table(name = "users")
@@ -20,6 +18,8 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
+    
+    public enum UserStatus { ACTIVE, BLOCKED }
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,20 +29,17 @@ public class User {
     private String username;
     
     @Column(nullable = false)
-    @JsonIgnore
-    private String password; // Encrypted
+    private String password; // BCrypt
     
     @Column(unique = true, nullable = false)
     private String email;
     
-    @Column(name = "phone_number", length = 20)
-    private String phoneNumber;
-    
-    @Column(name = "country", length = 100)
-    private String country;
-    
     @Column(name = "full_name")
     private String fullName;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20, columnDefinition = "varchar(20) default 'ACTIVE'")
+    private UserStatus status = UserStatus.ACTIVE;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -59,7 +56,6 @@ public class User {
     private Set<Role> roles = new HashSet<>();
     
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
-    @JsonIgnore
     private Wallet wallet;
     
     @PrePersist

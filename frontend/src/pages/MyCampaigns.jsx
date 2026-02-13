@@ -71,7 +71,9 @@ const MyCampaigns = () => {
                   <div
                     className="progress-fill"
                     style={{
-                      width: `${Math.min((campaign.totalRaised / campaign.goalAmount) * 100, 100)}%`
+                      width: `${campaign.goalAmount && Number(campaign.goalAmount) > 0
+                        ? Math.min((Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100, 100)
+                        : 0}%`
                     }}
                   />
                 </div>

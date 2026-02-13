@@ -9,8 +9,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * Campaign Entity - Stores UI metadata only
- * Financial data (goal, raised, etc.) stored on blockchain
+ * Campaign Entity - UI metadata + status (ACTIVE/COMPLETED/CANCELLED)
+ * Financial data synced from blockchain
  */
 @Entity
 @Table(name = "campaigns")
@@ -19,12 +19,14 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class Campaign {
     
+    public enum CampaignStatus { ACTIVE, COMPLETED, CANCELLED }
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
     @Column(name = "blockchain_id", unique = true, nullable = false)
-    private Long blockchainId; // Campaign ID from smart contract
+    private Long blockchainId;
     
     @ManyToOne
     @JoinColumn(name = "creator_id", nullable = false)
@@ -42,12 +44,11 @@ public class Campaign {
     @Column(name = "category", length = 50)
     private String category;
     
-    // Financial data synced from blockchain (read-only reference)
     @Column(name = "goal_amount", precision = 36, scale = 18)
-    private BigDecimal goalAmount; // In ETH (for display)
+    private BigDecimal goalAmount;
     
     @Column(name = "total_raised", precision = 36, scale = 18)
-    private BigDecimal totalRaised; // In ETH (synced from blockchain)
+    private BigDecimal totalRaised;
     
     @Column(name = "deadline")
     private LocalDateTime deadline;
@@ -57,6 +58,10 @@ public class Campaign {
     
     @Column(name = "funds_withdrawn")
     private Boolean fundsWithdrawn = false;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20, columnDefinition = "varchar(20) default 'ACTIVE'")
+    private CampaignStatus status = CampaignStatus.ACTIVE;
     
     @Column(name = "created_at")
     private LocalDateTime createdAt;

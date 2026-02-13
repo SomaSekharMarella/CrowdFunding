@@ -213,12 +213,23 @@ class Web3Service {
         deadline: campaign[2].toString(),
         totalRaised: campaign[3].toString(),
         goalReached: campaign[4],
-        fundsWithdrawn: campaign[5]
+        fundsWithdrawn: campaign[5],
+        active: campaign[6]
       };
     } catch (error) {
       console.error('Error getting campaign:', error);
       throw error;
     }
+  }
+
+  /**
+   * Cancel campaign (only contract owner / deployer wallet)
+   */
+  async cancelCampaign(campaignId) {
+    if (!this.contract) await this.connectWallet();
+    const tx = await this.contract.cancelCampaign(campaignId);
+    const receipt = await tx.wait();
+    return { transactionHash: receipt.hash };
   }
 
   /**

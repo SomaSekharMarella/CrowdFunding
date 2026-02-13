@@ -26,8 +26,12 @@ public class CampaignController {
     
     @GetMapping
     public ResponseEntity<List<CampaignResponse>> getAllCampaigns() {
-        List<CampaignResponse> campaigns = campaignService.getAllCampaigns();
-        return ResponseEntity.ok(campaigns);
+        return ResponseEntity.ok(campaignService.getAllCampaigns());
+    }
+
+    @GetMapping("/active")
+    public ResponseEntity<List<CampaignResponse>> getActiveCampaigns() {
+        return ResponseEntity.ok(campaignService.getActiveCampaigns());
     }
     
     @GetMapping("/{id}")
@@ -70,7 +74,9 @@ public class CampaignController {
             UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
             User creator = userRepository.findById(userPrincipal.getId())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-            
+            if (creator.getStatus() == com.crowdfunding.entity.User.UserStatus.BLOCKED) {
+                return ResponseEntity.status(403).body("Blocked users cannot create campaigns");
+            }
             Campaign campaign = campaignService.createCampaignMetadata(
                 creator,
                 blockchainId,

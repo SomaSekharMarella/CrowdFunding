@@ -3,24 +3,26 @@ pragma solidity ^0.8.20;
 
 /**
  * @title Crowdfunding
- * @dev Hybrid Blockchain-Based Crowdfunding Platform - Smart Contract
- * @notice Handles ONLY financial operations: donations, withdrawals, refunds
- * @notice Campaign metadata (title, description, images) stored off-chain in MySQL
+ * @dev Role-Based Hybrid Blockchain Crowdfunding - Smart Contract
+ * @notice Financial operations on-chain; admin can cancel campaigns (onlyOwner)
  */
 contract Crowdfunding {
+    address public owner;
+
     // ============ STRUCTS ============
     
     /**
-     * @dev Campaign structure - stores ONLY financial & trust-critical data
+     * @dev Campaign structure - financial & trust-critical data
      */
     struct Campaign {
-        address owner;           // Campaign creator wallet address
-        uint256 goal;            // Funding goal in Wei
-        uint256 deadline;        // Unix timestamp
+        address creator;        // Campaign creator wallet address
+        uint256 goal;           // Funding goal in Wei
+        uint256 deadline;       // Unix timestamp
         uint256 totalRaised;    // Total ETH raised in Wei
         bool goalReached;       // Whether goal has been met
-        bool fundsWithdrawn;    // Whether creator has withdrawn funds
-        bool exists;            // Whether campaign exists
+        bool fundsWithdrawn;   // Whether creator has withdrawn funds
+        bool exists;           // Whether campaign exists
+        bool active;           // false when admin cancels
     }
     
     /**
@@ -73,11 +75,20 @@ contract Crowdfunding {
         uint256 amount
     );
     
+    constructor() {
+        owner = msg.sender;
+    }
+
     // ============ MODIFIERS ============
+    
+    modifier onlyContractOwner() {
+        require(msg.sender == owner, "Only contract owner");
+        _;
+    }
     
     modifier onlyCampaignOwner(uint256 _campaignId) {
         require(campaigns[_campaignId].exists, "Campaign does not exist");
-        require(campaigns[_campaignId].owner == msg.sender, "Not campaign owner");
+        require(campaigns[_campaignId].creator == msg.sender, "Not campaign owner");
         _;
     }
     
@@ -86,8 +97,20 @@ contract Crowdfunding {
         _;
     }
     
+    modifier onlyActive(uint256 _campaignId) {
+        require(campaigns[_campaignId].exists, "Campaign does not exist");
+        require(campaigns[_campaignId].active, "Campaign is cancelled");
+        _;
+    }
+    
+    modifier beforeDeadline(uint256 _campaignId) {
+        require(block.timestamp < campaigns[_campaignId].deadline, "Campaign deadline passed");
+        _;
+    }
+    
     modifier campaignActive(uint256 _campaignId) {
         require(campaigns[_campaignId].exists, "Campaign does not exist");
+        require(campaigns[_campaignId].active, "Campaign is cancelled");
         require(block.timestamp < campaigns[_campaignId].deadline, "Campaign deadline passed");
         _;
     }
@@ -108,13 +131,14 @@ contract Crowdfunding {
         uint256 campaignId = campaignCount;
         
         campaigns[campaignId] = Campaign({
-            owner: msg.sender,
+            creator: msg.sender,
             goal: _goal,
             deadline: _deadline,
             totalRaised: 0,
             goalReached: false,
             fundsWithdrawn: false,
-            exists: true
+            exists: true,
+            active: true
         });
         
         emit CampaignCreated(campaignId, msg.sender, _goal, _deadline);
@@ -164,27 +188,35 @@ contract Crowdfunding {
         
         uint256 amount = campaign.totalRaised;
         
-        (bool success, ) = payable(campaign.owner).call{value: amount}("");
+        (bool success, ) = payable(campaign.creator).call{value: amount}("");
         require(success, "Transfer failed");
         
-        emit FundsWithdrawn(_campaignId, campaign.owner, amount);
+        emit FundsWithdrawn(_campaignId, campaign.creator, amount);
     }
     
     /**
-     * @dev Donor claims refund if campaign failed (deadline passed and goal not met)
-     * @param _campaignId The ID of the campaign
+     * @dev Admin (contract owner) cancels a campaign - no more donations; donors can refund
+     */
+    function cancelCampaign(uint256 _campaignId) external onlyContractOwner campaignExists(_campaignId) {
+        require(campaigns[_campaignId].active, "Already cancelled");
+        campaigns[_campaignId].active = false;
+    }
+    
+    /**
+     * @dev Donor claims refund if campaign failed or was cancelled
      */
     function refund(uint256 _campaignId) external campaignExists(_campaignId) {
         Campaign storage campaign = campaigns[_campaignId];
         
-        require(block.timestamp >= campaign.deadline, "Campaign deadline not reached");
-        require(!campaign.goalReached, "Campaign goal was reached");
         require(!campaign.fundsWithdrawn, "Funds already withdrawn");
+        require(
+            !campaign.active || (block.timestamp >= campaign.deadline && !campaign.goalReached),
+            "Campaign still active and not failed"
+        );
         
         uint256 amount = donorContributions[_campaignId][msg.sender];
         require(amount > 0, "No contribution to refund");
         
-        // Reset donor contribution to prevent double refund
         donorContributions[_campaignId][msg.sender] = 0;
         
         (bool success, ) = payable(msg.sender).call{value: amount}("");
@@ -197,32 +229,27 @@ contract Crowdfunding {
     
     /**
      * @dev Get campaign details
-     * @param _campaignId The ID of the campaign
-     * @return owner Campaign owner address
-     * @return goal Funding goal in Wei
-     * @return deadline Campaign deadline timestamp
-     * @return totalRaised Total ETH raised in Wei
-     * @return goalReached Whether goal has been met
-     * @return fundsWithdrawn Whether funds have been withdrawn
      */
     function getCampaign(uint256 _campaignId) external view returns (
-        address owner,
+        address creator,
         uint256 goal,
         uint256 deadline,
         uint256 totalRaised,
         bool goalReached,
-        bool fundsWithdrawn
+        bool fundsWithdrawn,
+        bool active
     ) {
         Campaign memory campaign = campaigns[_campaignId];
         require(campaign.exists, "Campaign does not exist");
         
         return (
-            campaign.owner,
+            campaign.creator,
             campaign.goal,
             campaign.deadline,
             campaign.totalRaised,
             campaign.goalReached,
-            campaign.fundsWithdrawn
+            campaign.fundsWithdrawn,
+            campaign.active
         );
     }
     
@@ -273,16 +300,12 @@ contract Crowdfunding {
     }
     
     /**
-     * @dev Check if campaign is eligible for refund
-     * @param _campaignId The ID of the campaign
-     * @return True if deadline passed and goal not met
+     * @dev Check if campaign is eligible for refund (failed or cancelled)
      */
     function isRefundable(uint256 _campaignId) external view returns (bool) {
         Campaign memory campaign = campaigns[_campaignId];
-        if (!campaign.exists) return false;
-        
-        return block.timestamp >= campaign.deadline && 
-               !campaign.goalReached && 
-               !campaign.fundsWithdrawn;
+        if (!campaign.exists || campaign.fundsWithdrawn) return false;
+        if (!campaign.active) return true; // cancelled
+        return block.timestamp >= campaign.deadline && !campaign.goalReached;
     }
 }

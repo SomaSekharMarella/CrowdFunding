@@ -12,6 +12,7 @@ import java.util.Optional;
 public interface CampaignRepository extends JpaRepository<Campaign, Long> {
     Optional<Campaign> findByBlockchainId(Long blockchainId);
     List<Campaign> findByCreator(User creator);
-    List<Campaign> findByGoalReached(boolean goalReached);
+    List<Campaign> findByStatus(Campaign.CampaignStatus status);
+    List<Campaign> findByStatusIn(List<Campaign.CampaignStatus> statuses);
     List<Campaign> findAllByOrderByCreatedAtDesc();
 }

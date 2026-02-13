@@ -25,8 +25,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     
     @Transactional
-    public User signup(String username, String email, String password, String fullName,
-                       String phoneNumber, String country) {
+    public User signup(String username, String email, String password, String fullName) {
         if (userRepository.existsByUsername(username)) {
             throw new RuntimeException("Username already exists");
         }
@@ -39,14 +38,12 @@ public class UserService {
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(password));
         user.setFullName(fullName);
-        user.setPhoneNumber(phoneNumber);
-        user.setCountry(country);
         
         // Assign default role
         Role userRole = roleRepository.findByName(Role.RoleName.ROLE_USER)
             .orElseThrow(() -> new RuntimeException("Role not found"));
         user.setRoles(new HashSet<>(Set.of(userRole)));
-        
+        user.setStatus(User.UserStatus.ACTIVE);
         return userRepository.save(user);
     }
     
@@ -79,8 +76,28 @@ public class UserService {
         return walletRepository.save(wallet);
     }
     
-    public User findByUsername(String username) {
-        return userRepository.findByUsername(username)
+    public User findById(Long id) {
+        return userRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public java.util.List<User> findAllUsers() {
+        return userRepository.findAll();
+    }
+
+    @Transactional
+    public User blockUser(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setStatus(User.UserStatus.BLOCKED);
+        return userRepository.save(user);
+    }
+
+    @Transactional
+    public User unblockUser(Long userId) {
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        user.setStatus(User.UserStatus.ACTIVE);
+        return userRepository.save(user);
     }
 }

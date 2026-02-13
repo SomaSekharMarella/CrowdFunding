@@ -15,9 +15,6 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Request with token:', config.url, 'Token exists:', !!token);
-    } else {
-      console.warn('No token found for request:', config.url);
     }
     return config;
   },
@@ -71,8 +68,9 @@ export const walletAPI = {
 
 export const campaignAPI = {
   getAll: () => api.get('/campaigns'),
+  getActive: () => api.get('/campaigns/active'),
   getById: (id) => api.get(`/campaigns/${id}`),
-  createMetadata: (blockchainId, data) => 
+  createMetadata: (blockchainId, data) =>
     api.post(`/campaigns/metadata?blockchainId=${blockchainId}`, data),
   getMyCampaigns: () => api.get('/campaigns/my-campaigns'),
   sync: (id) => api.post(`/campaigns/${id}/sync`)
@@ -85,6 +83,14 @@ export const donationAPI = {
     }),
   getMyDonations: () => api.get('/donations/my-donations'),
   getByCampaign: (campaignId) => api.get(`/donations/campaign/${campaignId}`)
+};
+
+export const adminAPI = {
+  getUsers: () => api.get('/admin/users'),
+  blockUser: (id) => api.put(`/admin/block/${id}`),
+  unblockUser: (id) => api.put(`/admin/unblock/${id}`),
+  getCampaigns: () => api.get('/admin/campaigns'),
+  cancelCampaign: (id) => api.delete(`/admin/campaign/${id}`)
 };
 
 export default api;

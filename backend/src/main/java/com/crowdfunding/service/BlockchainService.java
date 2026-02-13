@@ -37,7 +37,7 @@ public class BlockchainService {
     }
     
     /**
-     * Get campaign details from blockchain
+     * Get campaign details from blockchain (creator, goal, deadline, totalRaised, goalReached, fundsWithdrawn, active)
      */
     public CampaignData getCampaign(Long campaignId) throws Exception {
         Function function = new Function(
@@ -48,6 +48,7 @@ public class BlockchainService {
                 new TypeReference<Uint256>() {},
                 new TypeReference<Uint256>() {},
                 new TypeReference<Uint256>() {},
+                new TypeReference<org.web3j.abi.datatypes.Bool>() {},
                 new TypeReference<org.web3j.abi.datatypes.Bool>() {},
                 new TypeReference<org.web3j.abi.datatypes.Bool>() {}
             )
@@ -64,13 +65,15 @@ public class BlockchainService {
             function.getOutputParameters()
         );
         
+        Boolean activeValue = decoded.get(6).getValue() != null ? (Boolean) decoded.get(6).getValue() : true;
         return new CampaignData(
-            decoded.get(0).getValue().toString(), // owner
+            decoded.get(0).getValue().toString(), // creator
             (BigInteger) decoded.get(1).getValue(), // goal
             (BigInteger) decoded.get(2).getValue(), // deadline
             (BigInteger) decoded.get(3).getValue(), // totalRaised
-            (Boolean) decoded.get(4).getValue(), // goalReached
-            (Boolean) decoded.get(5).getValue()  // fundsWithdrawn
+            (Boolean) decoded.get(4).getValue(),   // goalReached
+            (Boolean) decoded.get(5).getValue(),  // fundsWithdrawn
+            activeValue // active
         );
     }
     
@@ -150,21 +153,23 @@ public class BlockchainService {
      * Campaign data from blockchain
      */
     public static class CampaignData {
-        public final String owner;
+        public final String owner; // creator address
         public final BigInteger goal;
         public final BigInteger deadline;
         public final BigInteger totalRaised;
         public final Boolean goalReached;
         public final Boolean fundsWithdrawn;
-        
+        public final Boolean active;
+
         public CampaignData(String owner, BigInteger goal, BigInteger deadline,
-                           BigInteger totalRaised, Boolean goalReached, Boolean fundsWithdrawn) {
+                            BigInteger totalRaised, Boolean goalReached, Boolean fundsWithdrawn, Boolean active) {
             this.owner = owner;
             this.goal = goal;
             this.deadline = deadline;
             this.totalRaised = totalRaised;
             this.goalReached = goalReached;
             this.fundsWithdrawn = fundsWithdrawn;
+            this.active = active != null ? active : true;
         }
     }
 }

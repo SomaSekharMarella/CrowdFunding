@@ -14,4 +14,3 @@ public class WalletResponse {
     private LocalDateTime connectedAt;
     private Boolean isVerified;
 }
-

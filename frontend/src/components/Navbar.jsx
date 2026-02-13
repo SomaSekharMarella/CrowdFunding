@@ -27,6 +27,13 @@ const Navbar = () => {
               <Link to="/create-campaign">Create Campaign</Link>
               <Link to="/my-campaigns">My Campaigns</Link>
               <Link to="/my-donations">My Donations</Link>
+              {user.roles?.includes('ROLE_ADMIN') && (
+                <>
+                  <Link to="/admin">Admin</Link>
+                  <Link to="/admin/users">Users</Link>
+                  <Link to="/admin/campaigns">Campaigns</Link>
+                </>
+              )}
               <span className="navbar-user">{user.username}</span>
               <button onClick={handleLogout} className="btn btn-secondary">
                 Logout

@@ -24,6 +24,7 @@ public class CampaignResponse {
     private Boolean fundsWithdrawn;
     private String creatorUsername;
     private String creatorWalletAddress;
+    private String status; // ACTIVE, COMPLETED, CANCELLED
     private LocalDateTime createdAt;
     private Long donationCount;
 }

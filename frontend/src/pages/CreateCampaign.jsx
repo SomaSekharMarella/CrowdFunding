@@ -49,14 +49,18 @@ const CreateCampaign = () => {
         deadlineTimestamp
       );
 
-      // Then create metadata in backend
+      // Normalize deadline for backend (LocalDateTime expects optional seconds)
+      const deadlineStr = formData.deadline && formData.deadline.length === 16
+        ? formData.deadline + ':00'
+        : formData.deadline;
+
       await campaignAPI.createMetadata(blockchainResult.campaignId, {
         title: formData.title,
         description: formData.description,
-        imageUrl: formData.imageUrl,
-        category: formData.category,
+        imageUrl: formData.imageUrl || null,
+        category: formData.category || null,
         goalAmount: formData.goalAmount,
-        deadline: formData.deadline
+        deadline: deadlineStr
       });
 
       alert('Campaign created successfully! Campaign ID: ' + blockchainResult.campaignId);

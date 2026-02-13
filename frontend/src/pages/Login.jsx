@@ -27,7 +27,8 @@ const Login = () => {
       login({ id, username, email, roles, walletAddress }, token);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data || 'Login failed. Please check your credentials.');
+      const msg = err.response?.data;
+      setError(typeof msg === 'string' ? msg : msg?.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }

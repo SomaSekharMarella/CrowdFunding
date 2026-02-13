@@ -27,19 +27,38 @@ const CampaignDetails = () => {
     }
   }, [campaign]);
 
-  const loadCampaign = async () => {
+  const loadCampaign = async (showLoading = false, forceSync = false) => {
+    if (showLoading) setLoading(true);
     try {
+      // Optionally force sync before fetching (for manual refresh)
+      if (forceSync) {
+        try {
+          await campaignAPI.sync(id);
+        } catch (syncErr) {
+          console.warn('Manual sync failed:', syncErr);
+        }
+      }
+      
+      // Backend getCampaignById automatically syncs from blockchain
       const [campaignRes, donationsRes] = await Promise.all([
         campaignAPI.getById(id),
         donationAPI.getByCampaign(id).catch(() => ({ data: [] }))
       ]);
-      setCampaign(campaignRes.data);
-      setDonations(donationsRes.data);
+      setCampaign(campaignRes?.data ?? null);
+      setDonations(Array.isArray(donationsRes?.data) ? donationsRes.data : []);
+      setError(''); // Clear any previous errors
     } catch (err) {
-      setError('Failed to load campaign');
+      setError(err.response?.status === 404 ? 'Campaign not found' : 'Failed to load campaign');
+      if (err.response?.status !== 404) {
+        setCampaign(null);
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    await loadCampaign(true, true); // Show loading and force sync
   };
 
   const checkRefundable = async () => {
@@ -67,7 +86,7 @@ const CampaignDetails = () => {
       // Donate on blockchain
       const result = await web3Service.donate(campaign.blockchainId, donationAmount);
       
-      // Record donation in backend
+      // Record donation in backend (this also syncs campaign data from blockchain)
       await donationAPI.record(
         campaign.id,
         result.transactionHash,
@@ -77,7 +96,9 @@ const CampaignDetails = () => {
 
       alert('Donation successful! Transaction: ' + result.transactionHash);
       setDonationAmount('');
-      loadCampaign();
+      
+      // Reload campaign data to show updated progress (with sync)
+      await loadCampaign(true);
     } catch (err) {
       alert('Donation failed: ' + err.message);
     } finally {
@@ -92,7 +113,7 @@ const CampaignDetails = () => {
       await web3Service.connectWallet();
       const result = await web3Service.withdrawFunds(campaign.blockchainId);
       alert('Funds withdrawn successfully! Transaction: ' + result.transactionHash);
-      loadCampaign();
+      loadCampaign(true);
     } catch (err) {
       alert('Withdrawal failed: ' + err.message);
     }
@@ -105,7 +126,7 @@ const CampaignDetails = () => {
       await web3Service.connectWallet();
       const result = await web3Service.refund(campaign.blockchainId);
       alert('Refund successful! Transaction: ' + result.transactionHash);
-      loadCampaign();
+      loadCampaign(true);
     } catch (err) {
       alert('Refund failed: ' + err.message);
     }
@@ -119,15 +140,29 @@ const CampaignDetails = () => {
     return <div className="container">Campaign not found</div>;
   }
 
+  const isAdmin = user?.roles?.includes('ROLE_ADMIN');
   const isOwner = user?.walletAddress?.toLowerCase() === campaign.creatorWalletAddress?.toLowerCase();
-  const progress = (campaign.totalRaised / campaign.goalAmount) * 100;
+  const goalAmount = Number(campaign.goalAmount);
+  const totalRaised = Number(campaign.totalRaised);
+  const progress = goalAmount > 0 ? Math.min((totalRaised / goalAmount) * 100, 100) : 0;
   const canWithdraw = isOwner && campaign.goalReached && !campaign.fundsWithdrawn;
+  const canDonate = !isAdmin && !isOwner;
 
   return (
     <div className="container">
-      <button onClick={() => navigate(-1)} className="btn btn-secondary back-btn">
-        ← Back
-      </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <button onClick={() => navigate(-1)} className="btn btn-secondary back-btn">
+          ← Back
+        </button>
+        <button 
+          onClick={handleRefresh} 
+          className="btn btn-secondary"
+          disabled={loading}
+          title="Refresh campaign data from blockchain"
+        >
+          {loading ? 'Refreshing...' : '🔄 Refresh'}
+        </button>
+      </div>
 
       {error && <div className="alert alert-error">{error}</div>}
 
@@ -174,7 +209,12 @@ const CampaignDetails = () => {
         </div>
 
         <div className="campaign-actions">
-          {!isOwner && (
+          {campaign.status && (
+            <span className={`status-badge ${campaign.status === 'ACTIVE' ? 'active' : campaign.status === 'COMPLETED' ? 'success' : 'danger'}`}>
+              {campaign.status}
+            </span>
+          )}
+          {canDonate && (
             <div className="donation-section">
               <h3>Make a Donation</h3>
               <div className="donation-input">
@@ -201,7 +241,9 @@ const CampaignDetails = () => {
               )}
             </div>
           )}
-
+          {isAdmin && !canDonate && !isOwner && (
+            <p className="info-text">Admins cannot donate to campaigns.</p>
+          )}
           {isOwner && (
             <div className="owner-actions">
               <h3>Campaign Owner Actions</h3>
@@ -228,7 +270,7 @@ const CampaignDetails = () => {
                   <div>
                     <p className="donation-amount">{donation.amount?.toFixed(4)} ETH</p>
                     <p className="donation-meta">
-                      {donation.donorWalletAddress} • {new Date(donation.donatedAt).toLocaleString()}
+                      {donation.donorWalletAddress || 'Wallet not linked'} • {new Date(donation.donatedAt).toLocaleString()}
                     </p>
                   </div>
                   <a

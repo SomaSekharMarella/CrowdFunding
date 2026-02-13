@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,12 +18,13 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // Allow login by either username or email using the same field
-        User user = userRepository.findByUsername(username)
-            .or(() -> userRepository.findByEmail(username))
-            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-        
+    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+        User user = userRepository.findByUsername(usernameOrEmail)
+            .or(() -> userRepository.findByEmail(usernameOrEmail))
+            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + usernameOrEmail));
+        if (user.getStatus() == User.UserStatus.BLOCKED) {
+            throw new DisabledException("User account is blocked");
+        }
         return UserPrincipal.create(user);
     }
 }

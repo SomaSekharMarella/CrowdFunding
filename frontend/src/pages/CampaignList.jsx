@@ -14,10 +14,10 @@ const CampaignList = () => {
 
   const loadCampaigns = async () => {
     try {
-      const response = await campaignAPI.getAll();
-      setCampaigns(response.data);
+      const response = await campaignAPI.getActive();
+      setCampaigns(Array.isArray(response?.data) ? response.data : []);
     } catch (err) {
-      setError('Failed to load campaigns');
+      setError(err.response?.data?.message || err.response?.data || 'Failed to load campaigns');
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,9 @@ const CampaignList = () => {
                   <div className="stat">
                     <span className="stat-label">Progress:</span>
                     <span className="stat-value">
-                      {((campaign.totalRaised / campaign.goalAmount) * 100).toFixed(1)}%
+                      {campaign.goalAmount && Number(campaign.goalAmount) > 0
+                        ? ((Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100).toFixed(1)
+                        : '0'}%
                     </span>
                   </div>
                 </div>
@@ -80,7 +82,9 @@ const CampaignList = () => {
                   <div
                     className="progress-fill"
                     style={{
-                      width: `${Math.min((campaign.totalRaised / campaign.goalAmount) * 100, 100)}%`
+                      width: `${campaign.goalAmount && Number(campaign.goalAmount) > 0
+                        ? Math.min((Number(campaign.totalRaised) / Number(campaign.goalAmount)) * 100, 100)
+                        : 0}%`
                     }}
                   />
                 </div>

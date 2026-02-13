@@ -25,6 +25,7 @@ public class DonationService {
     
     private final DonationRepository donationRepository;
     private final CampaignRepository campaignRepository;
+    private final CampaignService campaignService;
     
     /**
      * Record donation transaction hash
@@ -49,7 +50,17 @@ public class DonationService {
         donation.setDonatedAt(LocalDateTime.now());
         donation.setBlockNumber(blockNumber);
         
-        return donationRepository.save(donation);
+        Donation savedDonation = donationRepository.save(donation);
+        
+        // Sync campaign data from blockchain to update totalRaised, goalReached, etc.
+        try {
+            campaignService.syncCampaignFromBlockchain(campaignId);
+        } catch (Exception e) {
+            // Log but don't fail the donation recording if sync fails
+            System.err.println("Warning: Failed to sync campaign from blockchain after donation: " + e.getMessage());
+        }
+        
+        return savedDonation;
     }
     
     public List<DonationResponse> getDonationsByDonor(User donor) {
@@ -72,9 +83,11 @@ public class DonationService {
         response.setTransactionHash(donation.getTransactionHash());
         response.setAmount(donation.getAmount());
         response.setDonatedAt(donation.getDonatedAt());
-        if (donation.getDonor().getWallet() != null) {
-            response.setDonorWalletAddress(donation.getDonor().getWallet().getAddress());
-        }
+        response.setDonorWalletAddress(
+            donation.getDonor().getWallet() != null
+                ? donation.getDonor().getWallet().getAddress()
+                : "N/A"
+        );
         return response;
     }
 }
